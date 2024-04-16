@@ -1,22 +1,44 @@
 #!/bin/bash
 
-# Check for the correct number of arguments
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <input_directory> <output_file>"
+# Usage check to ensure correct arguments are passed
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 prefix_file fastq_dir output_dir"
     exit 1
 fi
 
-# Assign command-line arguments to variables
-input_directory="$1"
-output_file="$2"
+# Assigning command line arguments to variables
+prefix_file=$1
+fastq_dir=$2
+output_dir=$3
 
-# Check if the output directory exists, if not create it
-output_dir=$(dirname "$output_file")
-if [ ! -d "$output_dir" ]; then
-    mkdir -p "$output_dir"
+# Check if the fastq_dir exists and is a directory
+if [ ! -d "$fastq_dir" ]; then
+    echo "Error: Directory $fastq_dir does not exist."
+    exit 1
 fi
 
-# Concatenate all FASTQ files in the input directory
-cat "$input_directory"/*.fastq > "$output_file"
+# Create output directory if it does not exist
+mkdir -p "$output_dir"
 
-echo "All files have been concatenated into $output_file"
+# Loop through each prefix in the prefix file
+while read -r prefix; do
+    # Define output file names
+    out1="$output_dir/${prefix}_1.fastq"
+    out2="$output_dir/${prefix}_2.fastq"
+
+    # Initialize or clear output files
+    : > "$out1"
+    : > "$out2"
+
+    # Find and concatenate files matching each pattern
+    for file in "$fastq_dir/${prefix}_1.fastq"; do
+        cat "$file" >> "$out1"
+    done
+    for file in "$fastq_dir/${prefix}_2.fastq"; do
+        cat "$file" >> "$out2"
+    done
+
+    echo "Concatenated files for $prefix into $out1 and $out2"
+done < "$prefix_file"
+
+echo "All files processed."
