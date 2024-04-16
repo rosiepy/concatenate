@@ -21,7 +21,7 @@ fi
 mkdir -p "$output_dir"
 
 # Loop through each prefix in the prefix file
-while read -r prefix; do
+while IFS= read -r prefix; do
     # Define output file names
     out1="$output_dir/${prefix}_1.fastq"
     out2="$output_dir/${prefix}_2.fastq"
@@ -31,12 +31,9 @@ while read -r prefix; do
     : > "$out2"
 
     # Find and concatenate files matching each pattern
-    for file in "$fastq_dir/${prefix}_1.fastq"; do
-        cat "$file" >> "$out1"
-    done
-    for file in "$fastq_dir/${prefix}_2.fastq"; do
-        cat "$file" >> "$out2"
-    done
+    # This will handle cases with multiple files per prefix
+    find "$fastq_dir" -name "${prefix}_1.fastq" -exec cat {} + >> "$out1"
+    find "$fastq_dir" -name "${prefix}_2.fastq" -exec cat {} + >> "$out2"
 
     echo "Concatenated files for $prefix into $out1 and $out2"
 done < "$prefix_file"
