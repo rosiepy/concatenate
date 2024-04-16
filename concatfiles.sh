@@ -1,41 +1,32 @@
 #!/bin/bash
 
-# Usage check to ensure correct arguments are passed
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 prefix_file fastq_dir output_dir"
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <path-to-txt-file> <path-to-directory-with-fastq-files>"
     exit 1
 fi
 
 # Assigning command line arguments to variables
-prefix_file=$1
-fastq_dir=$2
-output_dir=$3
+txt_file="$1"
+fastq_dir="$2"
 
-# Check if the fastq_dir exists and is a directory
-if [ ! -d "$fastq_dir" ]; then
-    echo "Error: Directory $fastq_dir does not exist."
-    exit 1
-fi
+# Extract the base name of the txt file without the extension
+base_name=$(basename "$txt_file" .txt)
 
-# Create output directory if it does not exist
-mkdir -p "$output_dir"
+# Initialize the output files
+output_1="${base_name}_1.fastq"
+output_2="${base_name}_2.fastq"
 
-# Loop through each prefix in the prefix file
-while IFS= read -r prefix; do
-    # Define output file names
-    out1="$output_dir/${prefix}_1.fastq"
-    out2="$output_dir/${prefix}_2.fastq"
+# Make sure the output files are empty to start with
+> "$output_1"
+> "$output_2"
 
-    # Initialize or clear output files
-    : > "$out1"
-    : > "$out2"
+# Read each line from the txt file
+while IFS= read -r line; do
+    # Use the read line to construct the filename pattern and concatenate
+    cat "${fastq_dir}/${line}"_*_1.fastq >> "$output_1"
+    cat "${fastq_dir}/${line}"_*_2.fastq >> "$output_2"
+done < "$txt_file"
 
-    # Find and concatenate files matching each pattern
-    # This will handle cases with multiple files per prefix
-    find "$fastq_dir" -name "${prefix}_1.fastq" -exec cat {} + >> "$out1"
-    find "$fastq_dir" -name "${prefix}_2.fastq" -exec cat {} + >> "$out2"
-
-    echo "Concatenated files for $prefix into $out1 and $out2"
-done < "$prefix_file"
-
-echo "All files processed."
+echo "Concatenation complete."
+echo "Output files: $output_1, $output_2"
